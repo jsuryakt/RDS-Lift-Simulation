@@ -1,0 +1,54 @@
+body,html {
+    margin: 0;
+    padding: 0;
+}
+
+.container {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    justify-content: center;
+    padding: 0 1rem ;
+}
+
+.floor-container {
+    display: flex;
+    align-items: flex-end;
+    gap: 1rem;
+    padding: 2rem 0;
+    /*TODO*/
+    position: relative;
+}
+
+.floor-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.floor-buttons button:not(:disabled) {
+    cursor: pointer;
+}
+
+.floor {
+    flex-grow: 1;
+}
+
+.disabled {
+    cursor: not-allowed;
+}
+
+.lift-container {
+    display: flex;
+    gap: 2rem;
+    /*TODO*/
+    position: absolute;
+    bottom: 240px;
+    left: 100px;
+}
+
+.lift {
+    width: 50px;
+    height: 100px;
+    background: blue;
+}
