@@ -13,6 +13,10 @@ body,html {
     position: relative;
 }
 
+.initial-screen {
+    margin-bottom: 2rem;
+}
+
 .floor-container {
     display: flex;
     align-items: flex-end;
