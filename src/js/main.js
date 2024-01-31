@@ -2,6 +2,7 @@ const container = document.getElementById('container');
 const liftEle = document.getElementById('no-of-lifts');
 const floorEle = document.getElementById('no-of-floors');
 const initBtn = document.getElementById('init-btn');
+let liftStore = [];
 
 function buildStructure(noOfLifts, noOfFloors) {
   buildFloors(noOfFloors);
@@ -15,33 +16,57 @@ function buildFloors(noOfFloors) {
   for (let i = noOfFloors; i > 0; i--) {
     const isLastFloor = i === noOfFloors;
     const isFirstFloor = i === 1;
-    floorStr += `<div class="floor-container" id="floor-${i}">
+    floorStr += `<div class="floor-container">
       <div class="floor-buttons">
-        <button class="up floor-button ${isLastFloor ?
-        'disabled' :
-        ''}" ${isLastFloor ? 'disabled' : ''}>UP</button>
-        <button class="down floor-button ${isFirstFloor ?
-        'disabled' :
-        ''}" ${isFirstFloor ? 'disabled' : ''}>DOWN</button>
+        <button class="up floor-button${isLastFloor ? ' disabled' : ''}"
+        data-id="${i}"
+        ${isLastFloor ? 'disabled' : ''}>UP</button>
+        <button class="down floor-button${isFirstFloor ? ' disabled' : ''}"
+        data-id="${i}"
+        ${isFirstFloor ? 'disabled' : ''}>DOWN</button>
       </div>
       <hr class="floor"/>
       <p class="floor-num">Floor ${i}</p>
     </div>`;
   }
   container.insertAdjacentHTML('beforeend', floorStr);
+
+  const floorBtns = document.getElementsByClassName('floor-button');
+  Array.from(floorBtns).forEach(btn => {
+    btn.addEventListener('click', () => {
+      const clickedFloor = Number(btn.dataset.id);
+      const bestLift = liftStore.filter(lift => !lift.isBusy &&
+          lift.currentFloor !== clickedFloor).sort((l1, l2) =>
+          Math.abs(l1.currentFloor - clickedFloor) -
+          Math.abs(l2.currentFloor - clickedFloor))[0];
+      console.log('clicked on', clickedFloor, 'best floor available', bestLift);
+      bestLift.isBusy = true;
+      setTimeout(() => {
+        bestLift.currentFloor = clickedFloor;
+        bestLift.isBusy = false;
+        console.log(liftStore);
+      }, 2000);
+    });
+  });
+}
+
+function initLifts() {
+  const liftNodes = document.getElementsByClassName('wrapper');
+  removeNodes(liftNodes);
+  liftStore = [];
 }
 
 function buildLifts(noOfLifts) {
-  const liftNodes = document.getElementsByClassName('lift-container');
-  removeNodes(liftNodes);
-  const liftContainer = document.createElement('div');
-  liftContainer.classList.add('lift-container');
+  initLifts();
+  const wrapper = document.createElement('div');
+  wrapper.classList.add('wrapper');
   let liftStr = '';
   for (let i = 1; i <= noOfLifts; i++) {
-    liftStr += `<div class="lift" id="lift-${i}"></div>`;
+    liftStr += `<div class="lift-container"><div class="lift" id="lift-${i}"></div></div>`;
+    liftStore.push({id: i, currentFloor: 1, isBusy: false});
   }
-  liftContainer.innerHTML = liftStr;
-  container.insertAdjacentElement('beforeend', liftContainer);
+  wrapper.innerHTML = liftStr;
+  container.insertAdjacentElement('beforeend', wrapper);
 }
 
 function removeNodes(nodes) {

@@ -42,16 +42,16 @@ body,html {
     cursor: not-allowed;
 }
 
-.lift-container {
+.wrapper {
     display: flex;
-    gap: 2rem;
-    position: absolute;
-    bottom: 90px;
-    left: 100px;
+    gap: 5rem;
+    margin-left: 100px;
 }
 
 .lift {
     width: 50px;
     height: 100px;
     background: blue;
+    position: absolute;
+    bottom: 90px;
 }
