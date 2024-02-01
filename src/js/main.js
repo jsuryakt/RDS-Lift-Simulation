@@ -4,6 +4,10 @@ const floorEle = document.getElementById('no-of-floors');
 const initBtn = document.getElementById('init-btn');
 let liftStore = [];
 const FLOOR_GAP = 122;
+// delay per floor
+const MOVE_DELAY = 2;
+const LIFT_WIDTH = 50;
+const DOOR_WIDTH = LIFT_WIDTH/2;
 
 function buildStructure(noOfLifts, noOfFloors) {
   buildFloors(noOfFloors);
@@ -46,20 +50,37 @@ function buildFloors(noOfFloors) {
       }
 
       console.log('clicked on', clickedFloor, 'best floor available', bestLift);
-      const shouldGoUp = clickedFloor > bestLift.currentFloor;
+      const floorDiff = clickedFloor - bestLift.currentFloor;
       const liftEle = document.getElementById('lift-' + bestLift.id);
-      let calculatedFloorDiff = FLOOR_GAP * Math.abs(clickedFloor - bestLift.currentFloor);
-      if (!shouldGoUp) {
+      let calculatedFloorDiff = FLOOR_GAP * Math.abs(floorDiff);
+      console.log("floor diff", floorDiff);
+      if (floorDiff <= 0) {
         // go down
         calculatedFloorDiff *= -1;
       }
       const currBottom = parseInt(window.getComputedStyle(liftEle).bottom);
       console.log('current val', currBottom, 'bottom val', calculatedFloorDiff);
       liftEle.addEventListener('transitionstart', () => bestLift.isBusy = true);
+      liftEle.style.transition = `bottom ${Math.abs(floorDiff)*MOVE_DELAY}s ease-in-out`;
       liftEle.style.bottom = `${currBottom + calculatedFloorDiff}px`;
-      liftEle.addEventListener('transitionend', () => {
-        bestLift.currentFloor = clickedFloor;
-        bestLift.isBusy = false;
+      const doors = Array.from(liftEle.getElementsByClassName('door'));
+      const leftDoor = doors[0];
+      const rightDoor = doors[1];
+      liftEle.addEventListener('transitionend', (e) => {
+        // lift stops at a floor and we need to open doors and
+        if (e.propertyName === 'bottom') {
+          // width 0 to open the door
+          leftDoor.style.width = '0';
+          rightDoor.style.width = '0';
+          bestLift.currentFloor = clickedFloor;
+        }
+        // triggered after door is opened and closed
+        if (e.propertyName === 'width') {
+          leftDoor.style.width = `${DOOR_WIDTH}px`;
+          rightDoor.style.width = `${DOOR_WIDTH}px`;
+          // we free the lift after closing the door
+          bestLift.isBusy = false;
+        }
       });
     });
   });
@@ -77,7 +98,7 @@ function buildLifts(noOfLifts) {
   wrapper.classList.add('wrapper');
   let liftStr = '';
   for (let i = 1; i <= noOfLifts; i++) {
-    liftStr += `<div class="lift-container"><div class="lift" id="lift-${i}"></div></div>`;
+    liftStr += `<div class="lift-container"><div class="lift" id="lift-${i}"><div class="door"></div><div class="door"></div></div></div>`;
     liftStore.push({id: i, currentFloor: 1, isBusy: false});
   }
   wrapper.innerHTML = liftStr;
