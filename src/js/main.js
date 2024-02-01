@@ -39,13 +39,13 @@ function buildFloors(noOfFloors) {
       const bestLift = liftStore.filter(lift => !lift.isBusy).
           sort((l1, l2) => Math.abs(l1.currentFloor - clickedFloor) -
               Math.abs(l2.currentFloor - clickedFloor))[0];
+
       if (!bestLift) {
         console.log('All lifts are busy');
         return;
       }
-      console.log('clicked on', clickedFloor, 'best floor available', bestLift);
-      bestLift.isBusy = true;
 
+      console.log('clicked on', clickedFloor, 'best floor available', bestLift);
       const shouldGoUp = clickedFloor > bestLift.currentFloor;
       const liftEle = document.getElementById('lift-' + bestLift.id);
       let calculatedFloorDiff = FLOOR_GAP * Math.abs(clickedFloor - bestLift.currentFloor);
@@ -55,6 +55,7 @@ function buildFloors(noOfFloors) {
       }
       const currBottom = parseInt(window.getComputedStyle(liftEle).bottom);
       console.log('current val', currBottom, 'bottom val', calculatedFloorDiff);
+      liftEle.addEventListener('transitionstart', () => bestLift.isBusy = true);
       liftEle.style.bottom = `${currBottom + calculatedFloorDiff}px`;
       liftEle.addEventListener('transitionend', () => {
         bestLift.currentFloor = clickedFloor;
