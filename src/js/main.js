@@ -3,6 +3,7 @@ const liftEle = document.getElementById('no-of-lifts');
 const floorEle = document.getElementById('no-of-floors');
 const initBtn = document.getElementById('init-btn');
 let liftStore = [];
+const FLOOR_GAP = 122;
 
 function buildStructure(noOfLifts, noOfFloors) {
   buildFloors(noOfFloors);
@@ -34,18 +35,31 @@ function buildFloors(noOfFloors) {
   const floorBtns = document.getElementsByClassName('floor-button');
   Array.from(floorBtns).forEach(btn => {
     btn.addEventListener('click', () => {
-      const clickedFloor = Number(btn.dataset.id);
-      const bestLift = liftStore.filter(lift => !lift.isBusy &&
-          lift.currentFloor !== clickedFloor).sort((l1, l2) =>
-          Math.abs(l1.currentFloor - clickedFloor) -
-          Math.abs(l2.currentFloor - clickedFloor))[0];
+      const clickedFloor = parseInt(btn.dataset.id);
+      const bestLift = liftStore.filter(lift => !lift.isBusy).
+          sort((l1, l2) => Math.abs(l1.currentFloor - clickedFloor) -
+              Math.abs(l2.currentFloor - clickedFloor))[0];
+      if (!bestLift) {
+        console.log('All lifts are busy');
+        return;
+      }
       console.log('clicked on', clickedFloor, 'best floor available', bestLift);
       bestLift.isBusy = true;
-      setTimeout(() => {
+
+      const shouldGoUp = clickedFloor > bestLift.currentFloor;
+      const liftEle = document.getElementById('lift-' + bestLift.id);
+      let calculatedFloorDiff = FLOOR_GAP * Math.abs(clickedFloor - bestLift.currentFloor);
+      if (!shouldGoUp) {
+        // go down
+        calculatedFloorDiff *= -1;
+      }
+      const currBottom = parseInt(window.getComputedStyle(liftEle).bottom);
+      console.log('current val', currBottom, 'bottom val', calculatedFloorDiff);
+      liftEle.style.bottom = `${currBottom + calculatedFloorDiff}px`;
+      liftEle.addEventListener('transitionend', () => {
         bestLift.currentFloor = clickedFloor;
         bestLift.isBusy = false;
-        console.log(liftStore);
-      }, 2000);
+      });
     });
   });
 }

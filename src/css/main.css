@@ -30,6 +30,10 @@ body,html {
     gap: 1rem;
 }
 
+.floor-buttons hr {
+    margin: 0;
+}
+
 .floor-buttons button:not(:disabled) {
     cursor: pointer;
 }
@@ -54,4 +58,5 @@ body,html {
     background: blue;
     position: absolute;
     bottom: 90px;
+    transition: bottom 2s ease-in-out;
 }
