@@ -40,7 +40,7 @@ function buildFloors(noOfFloors) {
   Array.from(floorBtns).forEach(btn => {
     btn.addEventListener('click', () => {
       const clickedFloor = parseInt(btn.dataset.id);
-      const bestLift = liftStore.filter(lift => !lift.isBusy).
+      const bestLift = liftStore.filter(lift => !lift.isBusy || lift.currentFloor === clickedFloor).
           sort((l1, l2) => Math.abs(l1.currentFloor - clickedFloor) -
               Math.abs(l2.currentFloor - clickedFloor))[0];
 
@@ -54,25 +54,27 @@ function buildFloors(noOfFloors) {
       const doors = Array.from(liftEle.getElementsByClassName('door'));
       const leftDoor = doors[0];
       const rightDoor = doors[1];
-      let calculatedFloorDiff = FLOOR_GAP * Math.abs(floorDiff);
-      if (floorDiff < 0) {
-        // go down
-        calculatedFloorDiff *= -1;
-      } else if (floorDiff === 0) {
+      if (floorDiff === 0) {
         // same floor
         bestLift.isBusy = true;
         openDoors(leftDoor, rightDoor);
-      }
-      const currBottom = parseInt(window.getComputedStyle(liftEle).bottom);
-      // to listen on lift move and set it busy
-      liftEle.addEventListener('transitionstart', (e) => {
-        if (e.propertyName === 'bottom') {
-          bestLift.isBusy = true;
+      } else {
+        const currBottom = parseInt(window.getComputedStyle(liftEle).bottom);
+        // to listen on lift move and set it busy
+        liftEle.addEventListener('transitionstart', (e) => {
+          if (e.propertyName === 'bottom') {
+            bestLift.isBusy = true;
+          }
+        }, {once: true});
+        let calculatedFloorDiff = FLOOR_GAP * Math.abs(floorDiff);
+        if (floorDiff < 0) {
+          // go down
+          calculatedFloorDiff *= -1;
         }
-      }, {once: true});
-      // more no of floors more delay, since we need to maintain MOVE_DELAY on each floor
-      liftEle.style.transition = `bottom ${Math.abs(floorDiff)*MOVE_DELAY}s linear`;
-      liftEle.style.bottom = `${currBottom + calculatedFloorDiff}px`;
+        // more no of floors more delay, since we need to maintain MOVE_DELAY on each floor
+        liftEle.style.transition = `bottom ${Math.abs(floorDiff)*MOVE_DELAY}s linear`;
+        liftEle.style.bottom = `${currBottom + calculatedFloorDiff}px`;
+      }
       // to listen on lift target floor reach
       liftEle.addEventListener('transitionend', (e) => {
         if (e.propertyName === 'bottom') {
@@ -86,6 +88,7 @@ function buildFloors(noOfFloors) {
         rightDoor.style.width = `${DOOR_WIDTH}px`;
         // we free the lift after closing the door
         bestLift.isBusy = false;
+        // TODO process pending lift requests
       }, {once: true});
     });
   });
