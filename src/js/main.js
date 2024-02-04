@@ -4,10 +4,12 @@ const floorEle = document.getElementById('no-of-floors');
 const initBtn = document.getElementById('init-btn');
 let liftStore = [];
 const FLOOR_GAP = 122;
+const BASE_BOTTOM = 90;
 // delay per floor
 const MOVE_DELAY = 2;
 const LIFT_WIDTH = 50;
 const DOOR_WIDTH = LIFT_WIDTH/2;
+let queue = [];
 
 function buildStructure(noOfLifts, noOfFloors) {
   buildFloors(noOfFloors);
@@ -40,58 +42,95 @@ function buildFloors(noOfFloors) {
   Array.from(floorBtns).forEach(btn => {
     btn.addEventListener('click', () => {
       const clickedFloor = parseInt(btn.dataset.id);
-      const bestLift = liftStore.filter(lift => !lift.isBusy || lift.currentFloor === clickedFloor).
-          sort((l1, l2) => Math.abs(l1.currentFloor - clickedFloor) -
-              Math.abs(l2.currentFloor - clickedFloor))[0];
-
-      if (!bestLift) {
-        console.log('All lifts are busy');
-        return;
-      }
-
-      const floorDiff = clickedFloor - bestLift.currentFloor;
-      const liftEle = document.getElementById('lift-' + bestLift.id);
-      const doors = Array.from(liftEle.getElementsByClassName('door'));
-      const leftDoor = doors[0];
-      const rightDoor = doors[1];
-      if (floorDiff === 0) {
-        // same floor
-        bestLift.isBusy = true;
-        openDoors(leftDoor, rightDoor);
-      } else {
-        const currBottom = parseInt(window.getComputedStyle(liftEle).bottom);
-        // to listen on lift move and set it busy
-        liftEle.addEventListener('transitionstart', (e) => {
-          if (e.propertyName === 'bottom') {
-            bestLift.isBusy = true;
-          }
-        }, {once: true});
-        let calculatedFloorDiff = FLOOR_GAP * Math.abs(floorDiff);
-        if (floorDiff < 0) {
-          // go down
-          calculatedFloorDiff *= -1;
-        }
-        // more no of floors more delay, since we need to maintain MOVE_DELAY on each floor
-        liftEle.style.transition = `bottom ${Math.abs(floorDiff)*MOVE_DELAY}s linear`;
-        liftEle.style.bottom = `${currBottom + calculatedFloorDiff}px`;
-      }
-      // to listen on lift target floor reach
-      liftEle.addEventListener('transitionend', (e) => {
-        if (e.propertyName === 'bottom') {
-          openDoors(leftDoor, rightDoor);
-          bestLift.currentFloor = clickedFloor;
-        }
-      }, {once: true});
-      // to listen on door close
-      leftDoor.addEventListener('transitionend', () => {
-        leftDoor.style.width = `${DOOR_WIDTH}px`;
-        rightDoor.style.width = `${DOOR_WIDTH}px`;
-        // we free the lift after closing the door
-        bestLift.isBusy = false;
-        // TODO process pending lift requests
-      }, {once: true});
+      queue.push(clickedFloor);
+      console.log(queue);
+      moveLift(queue.shift());
     });
   });
+}
+
+function moveLift(clickedFloor) {
+  const bestLift = liftStore.filter(
+      lift => !lift.isBusy || lift.currentFloor === clickedFloor).
+      sort((l1, l2) => Math.abs(l1.currentFloor - clickedFloor) -
+          Math.abs(l2.currentFloor - clickedFloor))[0];
+
+  if (!bestLift) {
+    //insert into the beginning
+    queue.unshift(clickedFloor);
+    console.log("waiting for a free lift");
+    return;
+  }
+
+  if (bestLift.isBusy && bestLift.currentFloor === clickedFloor) {
+    console.log("lift is already in the floor and busy")
+    return;
+  }
+
+  const floorDiff = clickedFloor - bestLift.currentFloor;
+  const liftEle = document.getElementById('lift-' + bestLift.id);
+  const doors = Array.from(liftEle.getElementsByClassName('door'));
+  const leftDoor = doors[0];
+  const rightDoor = doors[1];
+  // same floor
+  if (floorDiff === 0) {
+    // since we don't change bottom if on same floor transitionstart will not be called, so setting isBusy here
+    bestLift.isBusy = true;
+    bestLift.currentFloor = clickedFloor;
+    openDoors(leftDoor, rightDoor);
+  } else {
+    const currBottom = (bestLift.currentFloor - 1) * FLOOR_GAP + BASE_BOTTOM;
+    // to listen on lift move and set it busy
+    liftEle.addEventListener('transitionstart', (e) => {
+      if (e.propertyName === 'bottom') {
+        bestLift.isBusy = true;
+      }
+    }, {once: true});
+    let calculatedFloorDiff = FLOOR_GAP * Math.abs(floorDiff);
+    if (floorDiff < 0) {
+      // go down
+      calculatedFloorDiff *= -1;
+    }
+    bestLift.currentFloor = clickedFloor;
+    // more no of floors more delay, since we need to maintain MOVE_DELAY(2s) on each floor
+    liftEle.style.transitionDuration = `${Math.abs(floorDiff) * MOVE_DELAY}s`;
+    liftEle.style.bottom = `${currBottom + calculatedFloorDiff}px`;
+  }
+  // to listen on door close
+  let count = {transitionCount: 0};
+  leftDoor.addEventListener('transitionend', e => {
+    // to not trigger liftEle transitionend event since it bubbles
+    e.stopImmediatePropagation();
+    onDoorWidthEndEvent(leftDoor, rightDoor, bestLift, count)
+  });
+  // otherwise it would bubble up to trigger liftEle transitionend event
+  rightDoor.addEventListener('transitionend', e => e.stopImmediatePropagation());
+  // to listen on lift target floor reach
+  liftEle.addEventListener('transitionend', (e) => {
+    if (e.propertyName === 'bottom') {
+      openDoors(leftDoor, rightDoor);
+      // bestLift.currentFloor = clickedFloor;
+    }
+  }, {once: true});
+}
+
+function onDoorWidthEndEvent(leftDoor, rightDoor, bestLift, count) {
+  count.transitionCount++;
+
+  // we first set width to 0 on lift reaching target floor, then set it back to original width
+  // so 2 transition events are fired, and we want to listen to the 2nd one, and then set the lift free and check the queue
+    if (count.transitionCount === 2) {
+      leftDoor.removeEventListener('transitionend', onDoorWidthEndEvent);
+      count.transitionCount = 0;
+      // we free the lift after closing the door
+      bestLift.isBusy = false;
+      if (queue.length > 0) {
+        moveLift(queue.shift());
+      }
+    } else {
+      leftDoor.style.width = `${DOOR_WIDTH}px`;
+      rightDoor.style.width = `${DOOR_WIDTH}px`;
+    }
 }
 
 function openDoors(...doors) {
@@ -102,6 +141,7 @@ function initLifts() {
   const liftNodes = document.getElementsByClassName('wrapper');
   removeNodes(liftNodes);
   liftStore = [];
+  queue = [];
 }
 
 function buildLifts(noOfLifts) {
