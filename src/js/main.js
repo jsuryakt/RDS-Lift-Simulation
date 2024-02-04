@@ -51,7 +51,7 @@ function buildFloors(noOfFloors) {
 
 function moveLift(clickedFloor) {
   const bestLift = liftStore.filter(
-      lift => !lift.isBusy || lift.currentFloor === clickedFloor).
+      lift => !lift.isBusy || (lift.currentFloor === clickedFloor && !lift.isBusy)).
       sort((l1, l2) => Math.abs(l1.currentFloor - clickedFloor) -
           Math.abs(l2.currentFloor - clickedFloor))[0];
 
