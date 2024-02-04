@@ -51,7 +51,7 @@ function buildFloors(noOfFloors) {
 
 function moveLift(clickedFloor) {
   const bestLift = liftStore.filter(
-      lift => !lift.isBusy || (lift.currentFloor === clickedFloor && !lift.isBusy)).
+      lift => !lift.isBusy || (lift.currentFloor === clickedFloor && !lift.doorBusy)).
       sort((l1, l2) => Math.abs(l1.currentFloor - clickedFloor) -
           Math.abs(l2.currentFloor - clickedFloor))[0];
 
@@ -77,6 +77,7 @@ function moveLift(clickedFloor) {
     // since we don't change bottom if on same floor transitionstart will not be called, so setting isBusy here
     bestLift.isBusy = true;
     bestLift.currentFloor = clickedFloor;
+    bestLift.doorBusy = true;
     openDoors(leftDoor, rightDoor);
   } else {
     const currBottom = (bestLift.currentFloor - 1) * FLOOR_GAP + BASE_BOTTOM;
@@ -108,6 +109,7 @@ function moveLift(clickedFloor) {
   // to listen on lift target floor reach
   liftEle.addEventListener('transitionend', (e) => {
     if (e.propertyName === 'bottom') {
+      bestLift.doorBusy = true;
       openDoors(leftDoor, rightDoor);
       // bestLift.currentFloor = clickedFloor;
     }
@@ -130,6 +132,7 @@ function onDoorWidthEndEvent(leftDoor, rightDoor, bestLift, count) {
     } else {
       leftDoor.style.width = `${DOOR_WIDTH}px`;
       rightDoor.style.width = `${DOOR_WIDTH}px`;
+      bestLift.doorBusy = false;
     }
 }
 
@@ -151,7 +154,7 @@ function buildLifts(noOfLifts) {
   let liftStr = '';
   for (let i = 1; i <= noOfLifts; i++) {
     liftStr += `<div class="lift-container"><div class="lift" id="lift-${i}"><div class="door"></div><div class="door"></div></div></div>`;
-    liftStore.push({id: i, currentFloor: 1, isBusy: false});
+    liftStore.push({id: i, currentFloor: 1, isBusy: false, doorBusy: false});
   }
   wrapper.innerHTML = liftStr;
   container.insertAdjacentElement('beforeend', wrapper);
