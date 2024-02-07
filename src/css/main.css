@@ -18,10 +18,11 @@ body,html {
 }
 
 .floor-container {
+    height: 122px;
     display: flex;
     align-items: flex-end;
     gap: 1rem;
-    padding: 2rem 0;
+    /*padding: 2rem 0;*/
 }
 
 .floor-buttons {
@@ -57,7 +58,7 @@ body,html {
     height: 100px;
     background: white;
     position: absolute;
-    bottom: 90px;
+    bottom: 58px;
     display: flex;
     justify-content: space-between;
     outline: 1px solid black;

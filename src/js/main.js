@@ -4,7 +4,7 @@ const floorEle = document.getElementById('no-of-floors');
 const initBtn = document.getElementById('init-btn');
 let liftStore = [];
 const FLOOR_GAP = 122;
-const BASE_BOTTOM = 90;
+const BASE_BOTTOM = 58;
 // delay per floor
 const MOVE_DELAY = 2;
 const LIFT_WIDTH = 50;
@@ -169,9 +169,9 @@ function removeNodes(nodes) {
 }
 
 initBtn.addEventListener('click', () => {
-  const noOfLifts = liftEle.value;
-  const noOfFloors = floorEle.value;
-  if (noOfLifts > 0 && noOfFloors > 0) {
+  const noOfLifts = parseInt(liftEle.value);
+  const noOfFloors = parseInt(floorEle.value);
+  if (noOfLifts > 0 && noOfFloors > 1) {
     buildStructure(noOfLifts, noOfFloors);
   } else {
     alert('Enter proper input');
